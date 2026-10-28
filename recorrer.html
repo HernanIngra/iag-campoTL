@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+<title>Recorrer · I.Ag</title>
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: #f0f4f8; color: #1e293b; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 14px; overflow: hidden; }
+
+  /* ── Barra superior ─────────────────────────────────────────────────────── */
+  header { position: absolute; top: 0; left: 0; right: 0; height: 52px; z-index: 900;
+    background: #1e293b; color: #fff; display: flex; align-items: center; gap: 12px; padding: 0 14px; }
+  header .logo { font-size: 17px; font-weight: 800; color: #e2b04a; letter-spacing: .07em; }
+  header h1 { font-size: 15px; font-weight: 600; }
+  header .sp { flex: 1; }
+  header a, header button { font-family: inherit; }
+  .hbtn { background: #334155; color: #e2e8f0; border: none; border-radius: 8px; padding: 7px 13px;
+    font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .hbtn:hover { background: #475569; }
+  .hbtn.on { background: #15803d; color: #fff; }
+  header .info { font-size: 12px; color: #94a3b8; }
+  .quien { font-size: 12px; color: #e2e8f0; display: flex; align-items: baseline; gap: 6px; }
+  .quien b { font-weight: 700; }
+  .quien .rol { font-size: 10.5px; color: #94a3b8; }
+
+  /* ── Mapa ───────────────────────────────────────────────────────────────── */
+  #mapa { position: absolute; top: 52px; left: 0; right: 380px; bottom: 0; background: #dbe4ec; }
+  @media (max-width: 900px) { #mapa { right: 0; bottom: 45%; } }
+
+  /* ── Panel ──────────────────────────────────────────────────────────────── */
+  #panel { position: absolute; top: 52px; right: 0; width: 380px; bottom: 0;
+    background: #fff; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 800; }
+  @media (max-width: 900px) { #panel { top: auto; width: auto; left: 0; height: 45%; border-left: none; border-top: 1px solid #e2e8f0; } }
+
+  .p-head { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; }
+  .p-body { flex: 1; overflow-y: auto; }
+  .p-foot { border-top: 1px solid #e2e8f0; padding: 12px 14px; background: #f8fafc; }
+
+  input[type=text], select { width: 100%; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px;
+    padding: 8px 10px; font-size: 14px; color: #0f172a; font-family: inherit; outline: none; }
+  input[type=text]:focus { border-color: #93c5fd; background: #fff; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+  .chip { padding: 4px 11px; border-radius: 20px; border: 1.5px solid #cbd5e1; background: #fff;
+    font-size: 11.5px; font-weight: 600; cursor: pointer; color: #475569; font-family: inherit; white-space: nowrap; }
+  .chip.on { color: #fff; }
+
+  .campo-h { padding: 8px 14px; background: #f8fafc; font-size: 11px; font-weight: 800; color: #64748b;
+    text-transform: uppercase; letter-spacing: .05em; position: sticky; top: 0; border-bottom: 1px solid #eef2f6;
+    display: flex; justify-content: space-between; align-items: center; }
+  .lote-fila { display: flex; align-items: center; gap: 10px; padding: 9px 14px; cursor: pointer;
+    border-bottom: 1px solid #f1f5f9; }
+  .lote-fila:hover { background: #f8fafc; }
+  .lote-fila.on { background: #f0fdf4; }
+  .lote-fila .pt { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+  .lote-fila .nm { flex: 1; font-weight: 700; font-size: 13.5px; color: #0f172a; }
+  .lote-fila .ha { font-size: 12px; color: #94a3b8; }
+  .lote-fila input { width: 16px; height: 16px; accent-color: #15803d; cursor: pointer; }
+
+  .vacio { padding: 26px 14px; text-align: center; color: #94a3b8; font-size: 13px; }
+
+  .resumen { display: flex; align-items: baseline; gap: 8px; margin-bottom: 9px; }
+  .resumen .n { font-size: 26px; font-weight: 800; color: #15803d; }
+  .resumen .t { font-size: 13px; color: #475569; }
+  .btn { width: 100%; font-family: inherit; font-size: 14px; font-weight: 700; border-radius: 9px;
+    padding: 11px; cursor: pointer; border: none; }
+  .btn-green { background: #15803d; color: #fff; }
+  .btn-green:disabled { background: #cbd5e1; cursor: default; }
+  .btn-ghost { background: #fff; color: #475569; border: 1.5px solid #cbd5e1; margin-top: 7px; }
+
+  /* ── Ficha ──────────────────────────────────────────────────────────────── */
+  #ficha { position: absolute; left: 12px; bottom: 12px; width: 330px; max-height: calc(100% - 34px);
+    background: #fff; z-index: 850; border-radius: 12px; box-shadow: 0 10px 30px rgba(15,23,42,.18);
+    padding: 14px; display: none; flex-direction: column; }
+  #ficha.abierta { display: flex; }
+  #ficha-lista { overflow-y: auto; margin-top: 10px; }
+  .ap { padding: 7px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+  .ap:last-child { border-bottom: none; }
+  .ap .l1 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .ap .pr { font-weight: 700; color: #0f172a; }
+  .ap .fe { color: #94a3b8; font-size: 11px; white-space: nowrap; }
+  .ap .l2 { color: #64748b; margin-top: 1px; font-size: 11.5px; }
+  .ap .tp { display: inline-block; font-size: 9.5px; font-weight: 800; padding: 1px 6px; border-radius: 20px;
+    background: #f1f5f9; color: #64748b; text-transform: uppercase; letter-spacing: .03em; margin-right: 5px; }
+  .dia { margin-top: 10px; }
+  .dia:first-child { margin-top: 0; }
+  .dia-cab { display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
+    background: #f8fafc; border-radius: 6px; padding: 5px 8px; font-size: 12px; }
+  .dia-cab .fe { font-weight: 800; color: #0f172a; }
+  .dia-cab .ha { color: #64748b; font-size: 11px; white-space: nowrap; }
+  .dia-junta { font-size: 10.5px; color: #b45309; font-weight: 700; padding: 3px 8px 0; }
+  .dia .ap { padding-left: 8px; }
+  .campana { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
+  .campana button { font-family: inherit; font-size: 11px; font-weight: 700; padding: 3px 10px;
+    border-radius: 20px; border: 1.5px solid #cbd5e1; background: #fff; color: #475569; cursor: pointer; }
+  .campana button.on { background: #1e293b; color: #fff; border-color: #1e293b; }
+  /* Celular: la ficha sube desde abajo, por encima de la lista */
+  @media (max-width: 900px) {
+    #ficha { position: fixed; left: 0; right: 0; bottom: 0; width: auto; max-height: 72vh;
+             border-radius: 16px 16px 0 0; z-index: 1200; box-shadow: 0 -8px 30px rgba(15,23,42,.25); }
+  }
+  #ficha .fx { position: absolute; top: 9px; right: 11px; background: none; border: none; font-size: 17px;
+    color: #94a3b8; cursor: pointer; font-family: inherit; }
+  #ficha h3 { font-size: 17px; font-weight: 800; color: #0f172a; }
+  #ficha .sub { font-size: 12px; color: #94a3b8; margin-top: 1px; }
+  #ficha .dato { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+  #ficha .dato b { color: #0f172a; }
+  #ficha .hist { margin-top: 9px; font-size: 12px; color: #94a3b8; }
+
+  .leaflet-container { background: #dbe4ec; }
+  /* Con relleno transparente el interior del polígono no está "pintado" y los
+     clics pasarían de largo. Con esto se puede tocar el lote en cualquier parte. */
+  .leaflet-overlay-pane path.leaflet-interactive { pointer-events: all; }
+  .etiq-lote { background: none; border: none; box-shadow: none; font-size: 11px; font-weight: 800;
+    color: #fff; white-space: nowrap; padding: 0;
+    text-shadow: 0 0 3px #000, 0 0 3px #000, 0 1px 5px rgba(0,0,0,.95); }
+  .etiq-lote::before { display: none; }   /* la flechita del tooltip */
+
+  #aviso { position: absolute; top: 62px; left: 50%; transform: translateX(-50%); z-index: 950;
+    background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 8px 14px; border-radius: 9px;
+    font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 12px rgba(15,23,42,.1); display: none; }
+  #pend-mapa { margin-top: 8px; }
+  #pend-mapa .pm-t { font-size: 11.5px; font-weight: 800; color: #c2410c; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  #pend-mapa .pm { display: block; width: 100%; text-align: left; font-family: inherit; background: #fff7ed; border: 1px solid #fed7aa;
+    border-radius: 8px; padding: 5px 8px; margin-bottom: 4px; cursor: pointer; font-size: 12.5px; color: #0f172a; }
+  #pend-mapa .pm:hover { border-color: #f97316; }
+  #pend-mapa .pm b { color: #c2410c; }
+  #pend-mapa .pm span { color: #64748b; font-size: 11.5px; }
+  .ir-inicio { background: #fff; color: #0f172a !important; font-weight: 800; font-size: 14px; padding: 7px 12px;
+               border-radius: 9px; text-decoration: none; white-space: nowrap; align-self: center; }
+  /* Celular: el encabezado no entra entero; se esconde el resumen y los botones se deslizan */
+  @media (max-width: 700px) {
+    header .info { display: none; }
+    header { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+    header::-webkit-scrollbar { display: none; }
+    header > * { flex-shrink: 0; }
+  }
+  /* Celular: mapa arriba; abajo la lista se desliza entera y los botones quedan a mano */
+  @media (max-width: 900px) {
+    #mapa { bottom: auto; height: 38vh; }
+    #panel { top: calc(52px + 38vh); height: auto; bottom: 0; display: block; overflow-y: auto; }
+    .p-body { overflow: visible; }
+    .p-foot { position: sticky; bottom: 0; z-index: 2; }
+    #nube-estado { top: 58px !important; bottom: auto !important; left: auto !important; right: 8px !important;
+                   font-size: 11px !important; padding: 5px 9px !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="ir-inicio" href="index.html?v=25" title="Volver al inicio">⌂ Inicio</a>
+  <h1>Recorrer</h1>
+  <span class="info" id="info-campos"></span>
+  <span class="sp"></span>
+  <button class="hbtn" id="btn-ubic">📍 Mi ubicación</button>
+  <button class="hbtn" id="btn-fondo">🛰 Satélite</button>
+  <button class="hbtn" id="btn-relleno">▢ Sólo contorno</button>
+  <button class="hbtn" id="btn-color">🎨 Por campo</button>
+  <span id="barra-usuario" style="display:flex;align-items:center;gap:9px"></span>
+  <a class="hbtn" href="stock.html?v=25" style="text-decoration:none">Stock →</a>
+</header>
+
+<div id="mapa"></div>
+<div id="aviso"></div>
+
+<div id="ficha">
+  <button class="fx" id="ficha-x">✕</button>
+  <h3 id="ficha-nombre"></h3>
+  <div class="sub" id="ficha-campo"></div>
+  <div style="margin-top:10px">
+    <div class="dato"><span>Superficie</span><b id="ficha-ha"></b></div>
+    <div class="dato"><span>Cultivo</span><b id="ficha-cultivo">—</b></div>
+    <div class="dato" style="border:none"><span>Última aplicación</span><b id="ficha-ult">—</b></div>
+  </div>
+  <div class="campana" id="ficha-filtros"></div>
+  <div id="ficha-lista"></div>
+</div>
+
+<div id="panel">
+  <div class="p-head">
+    <input type="text" id="buscar" placeholder="Buscar lote…" autocomplete="off" />
+    <div class="chips" id="chips-campos"></div>
+    <div id="pend-mapa"></div>
+  </div>
+  <div class="p-body" id="lista"></div>
+  <div class="p-foot">
+    <div class="resumen">
+      <span class="n" id="sel-n">0</span>
+      <span class="t" id="sel-t">lotes seleccionados</span>
+      <span class="sp" style="flex:1"></span>
+      <span class="n" id="sel-ha" style="font-size:20px">0</span>
+      <span class="t">ha</span>
+    </div>
+    <button class="btn btn-green" id="btn-recetar" disabled>Recetar</button>
+    <button class="btn btn-ghost" id="btn-limpiar">Limpiar selección</button>
+  </div>
+</div>
+
+<script src="vendor/leaflet/leaflet.js?v=25"></script>
+<script src="usuario.js?v=25"></script>
+<script src="lotes-tl.js?v=25" onerror="window.LOTES_FALTA=true"></script>
+<script src="aplicaciones-tl.js?v=25" onerror="window.APLIC_FALTA=true"></script>
+<script src="campos-tl.js?v=25"></script>
+<script src="hojas.js?v=25"></script>
+<script src="nube.js?v=25"></script>
+<script>
+(function () {
+  "use strict";
+
+  const LOTES = Array.isArray(window.LOTES) ? window.LOTES : [];
+  const META = window.LOTES_META || {};
+
+  // Historia de aplicaciones, comprimida con diccionario (ver build_aplicaciones.py)
+  const APLIC = window.APLICACIONES || {};
+  const APLIC_DIC = window.APLIC_DIC || null;
+  const APLIC_META = window.APLIC_META || {};
+  const _aplicCache = {};
+
+  /** Aplicaciones de un lote, ya descomprimidas y ordenadas de nueva a vieja. */
+  /**
+   * Lo aplicado en un lote: el historial (archivo de la empresa) más las
+   * órdenes de la app ya aplicadas (o reportadas), lo más nuevo primero.
+   */
+  function aplicacionesDe(loteId) {
+    const todas = historialDe(loteId).concat(deOrdenes(loteId));
+    return todas.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+  }
+  function deOrdenes(loteId) {
+    let S = null;
+    try { S = JSON.parse(localStorage.getItem("iagtl_stock_v2") || "null"); } catch (e) { S = null; }
+    if (!S || !Array.isArray(S.ordenes)) return [];
+    const prod = (id) => (S.catalogo || []).find((p) => p.id === id) || {};
+    const out = [];
+    S.ordenes.filter((o) => (o.estado === "aplicada" || o.estado === "reportada") && !o.prueba).forEach((o) => {
+      const l = (o.lotes || []).find((x) => x.loteId === loteId);
+      if (!l) return;
+      (o.items || []).filter((it) => it.prod).forEach((it) => {
+        const p = prod(it.prod);
+        const dosis = Number(it.dosisReal || it.dosis) || 0;
+        out.push({ fecha: o.fechaAplicacion || o.fecha || "", cultivo: o.cultivo || "", producto: p.marca || "?",
+                   tipo: p.tipo || "", dosis, unidad: String(it.unidad || "").replace(/\/ha$/i, ""),
+                   total: dosis * (Number(l.ha) || 0), sup: Number(l.ha) || 0, real: true, ot: o.numero });
+      });
+    });
+    return out;
+  }
+  function historialDe(loteId) {
+    if (_aplicCache[loteId]) return _aplicCache[loteId];
+    const crudo = APLIC[loteId];
+    if (!crudo) return [];
+    const d = (campo, i) => (APLIC_DIC && APLIC_DIC[campo] ? (APLIC_DIC[campo][i] || "") : (i || ""));
+    const filas = crudo.map((f) => ({
+      fecha: f.f, cultivo: d("c", f.c), producto: d("p", f.p), tipo: d("t", f.t),
+      dosis: f.d, unidad: d("u", f.u), total: f.q, sup: f.s,
+      real: f.e === "R", invierno: !!f.i,   // el costo (f.$) no se muestra en la recorrida
+    }));
+    _aplicCache[loteId] = filas;
+    return filas;
+  }
+
+  /** El cultivo del lote es el de su aplicación más reciente que declare uno. */
+  const _cultivoCache = {};
+  function cultivoDe(loteId) {
+    if (_cultivoCache[loteId] !== undefined) return _cultivoCache[loteId];
+    const a = aplicacionesDe(loteId).find((x) => x.cultivo && x.cultivo !== "TODOS" && x.cultivo !== "0");
+    return (_cultivoCache[loteId] = a ? a.cultivo : "");
+  }
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmt = (n, d) => (n == null || isNaN(n)) ? "—"
+    : n.toLocaleString("es-AR", { minimumFractionDigits: d === undefined ? 1 : d, maximumFractionDigits: d === undefined ? 1 : d });
+  const sinAcentos = (s) => String(s || "").normalize("NFD").replace(new RegExp("[̀-ͯ]", "g"), "").toLowerCase();
+
+  // Un color estable por campo, para reconocerlos de un vistazo
+  // Colores saturados: sobre imagen satelital los tonos apagados desaparecen
+  const PALETA = ["#fbbf24", "#4ade80", "#60a5fa", "#f472b6", "#c084fc", "#2dd4bf", "#fb923c", "#e2e8f0"];
+  const campos = Array.from(new Set(LOTES.map((l) => l.campo))).sort();
+  const colorDe = {};
+  campos.forEach((c, i) => { colorDe[c] = PALETA[i % PALETA.length]; });
+
+  // Colores por cultivo: los agronómicos habituales, para leer el mapa de un vistazo
+  const COLOR_CULTIVO = {
+    "SOJA": "#4ade80", "MAIZ": "#fbbf24", "MUNGO": "#a3e635", "CHIA": "#c084fc",
+    "TRIGO": "#fcd34d", "POR.COLORADO": "#f87171", "POR.BLANCO": "#e2e8f0",
+    "POR.NEGRO": "#94a3b8", "CARTAMO": "#fb923c", "GARBANZO": "#d6d3d1",
+    "SORGO": "#f472b6", "GIRASOL": "#facc15", "POROTO": "#fda4af",
+  };
+  let colorearPor = "campo";     // "campo" | "cultivo"
+
+  /**
+   * Cultivo planificado 26-27 de un lote (pestaña Planificación de la planilla),
+   * traducido a las claves de color: «Maiz/Braquiaria» → MAIZ, «Poroto blanco» → POR.BLANCO.
+   */
+  function cultivoPlan(loteId) {
+    let S = null;
+    try { S = JSON.parse(localStorage.getItem("iagtl_stock_v2") || "null"); } catch (e) { S = null; }
+    if (!S || !Array.isArray(S.planificacion)) return "";
+    // Por id y, si no, por nombre: un equipo con datos viejos puede tener otros
+    // ids de lote, pero «SE4B» es «SE4B» en el mapa y en la planilla
+    const l = LOTES.find((x) => x.id === loteId);
+    const nom = l ? sinAcentos(l.nombre).replace(/\s+/g, "") : "";
+    const p = S.planificacion.find((x) => x.cultivo && (x.loteId === loteId || (nom && sinAcentos(x.lote || "").replace(/\s+/g, "") === nom)));
+    return p ? p.cultivo : "";
+  }
+  function claveColor(c) {
+    const t = sinAcentos(c);
+    if (/poroto.*blanc/.test(t)) return "POR.BLANCO";
+    if (/poroto.*colorad/.test(t)) return "POR.COLORADO";
+    if (/poroto.*negr/.test(t)) return "POR.NEGRO";
+    if (/maiz/.test(t)) return "MAIZ";
+    if (/soja/.test(t)) return "SOJA";
+    if (/mungo/.test(t)) return "MUNGO";
+    if (/chia/.test(t)) return "CHIA";
+    return String(c || "").toUpperCase();
+  }
+  function colorLote(l) {
+    if (colorearPor === "cultivo") {
+      // Primero lo planificado para 26-27; si no hay, el último cultivo del historial
+      const c = claveColor(cultivoPlan(l.id) || cultivoDe(l.id) || "");
+      return COLOR_CULTIVO[c] || "#64748b";
+    }
+    return colorDe[l.campo];
+  }
+
+  let seleccion = new Set();
+  let camposVisibles = new Set();     // vacío = todos
+
+  /**
+   * Abrir mostrando los 7 campos a la vez no sirve: están dispersos en más de
+   * 300 km y cada lote queda de un píxel. Se arranca en un campo —el de mayor
+   * superficie, o el que venga en la URL— y desde los chips se cambia.
+   */
+  (function campoInicial() {
+    const pedido = new URLSearchParams(location.search).get("campo");
+    if (pedido) {
+      const m = campos.find((c) => sinAcentos(c) === sinAcentos(pedido));
+      if (m) { camposVisibles.add(m); return; }
+    }
+    if (campos.length > 1) {
+      const ha = {};
+      LOTES.forEach((l) => { ha[l.campo] = (ha[l.campo] || 0) + l.ha; });
+      camposVisibles.add(campos.slice().sort((a, b) => ha[b] - ha[a])[0]);
+    }
+  })();
+  let capaDe = {};                    // id de lote → polígono de color
+  let realceDe = {};                  // id de lote → línea negra de realce
+
+  function aviso(msg, ms) {
+    const a = $("aviso");
+    a.textContent = msg; a.style.display = "block";
+    clearTimeout(a._t); a._t = setTimeout(() => { a.style.display = "none"; }, ms || 3500);
+  }
+
+  if (!LOTES.length) {
+    aviso("No se encontró lotes-tl.js — generalo con tools/build_lotes.py", 999999);
+  }
+
+  // ── Mapa ────────────────────────────────────────────────────────────────
+  const mapa = L.map("mapa", { zoomControl: true, attributionControl: true });
+
+  const satelite = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom: 18, attribution: "Imagen: Esri" });
+  const callejero = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    { maxZoom: 19, attribution: "© OpenStreetMap" });
+
+  // Sin señal los mosaicos no cargan: los polígonos se ven igual sobre el fondo liso.
+  let fondos = [satelite, callejero, null], fondoIdx = 0;
+  satelite.addTo(mapa);
+  $("btn-color").addEventListener("click", () => {
+    colorearPor = colorearPor === "campo" ? "cultivo" : "campo";
+    $("btn-color").textContent = colorearPor === "campo" ? "🎨 Por campo" : "🌱 Por cultivo";
+    if (colorearPor === "cultivo" && modoRelleno === 0) {
+      modoRelleno = 1;   // sin relleno el color de cultivo casi no se nota
+      $("btn-relleno").textContent = "▨ Relleno suave";
+    }
+    repintarTodos();
+    renderLista();
+  });
+
+  $("btn-relleno").addEventListener("click", () => {
+    modoRelleno = (modoRelleno + 1) % RELLENO.length;
+    $("btn-relleno").textContent = ["▢ Sólo contorno", "▨ Relleno suave", "▩ Relleno fuerte"][modoRelleno];
+    repintarTodos();
+  });
+
+  $("btn-fondo").addEventListener("click", () => {
+    if (fondos[fondoIdx]) mapa.removeLayer(fondos[fondoIdx]);
+    fondoIdx = (fondoIdx + 1) % fondos.length;
+    if (fondos[fondoIdx]) fondos[fondoIdx].addTo(mapa);
+    $("btn-fondo").textContent = ["🛰 Satélite", "🗺 Mapa", "⬜ Sin fondo"][fondoIdx];
+  });
+
+  // 0 = sólo contorno · 1 = relleno suave · 2 = relleno fuerte
+  let modoRelleno = 0;
+  const RELLENO = [0, 0.18, 0.42];
+
+  // ── Órdenes pendientes en el mapa ───────────────────────────────────────
+  // loteId → órdenes que todavía no se cerraron (de la zona del usuario, si tiene)
+  let PEND = {};
+  const ESTADO_PEND = { borrador: "Solicitada", transito: "Producto retirado", reportada: "Aplicación reportada" };
+  function calcularPendientes() {
+    PEND = {};
+    let S = null;
+    try { S = JSON.parse(localStorage.getItem("iagtl_stock_v2") || "null"); } catch (e) { S = null; }
+    if (!S || !Array.isArray(S.ordenes)) return [];
+    const u = window.IAgUsuario.actual();
+    const zonaLote = (id) => { const l = LOTES.find((x) => x.id === id); const c = l && APLIC_META.campos && APLIC_META.campos[l.campo]; return c ? c.zona : ""; };
+    const lista = S.ordenes.filter((o) => (o.estado !== "aplicada" || o.retorno === "pendiente") && (o.lotes || []).length)
+      .filter((o) => !u || !u.zona || o.lotes.some((x) => zonaLote(x.loteId) === u.zona))
+      .map((o) => ({ id: o.id, numero: o.prueba ? o.numero + " (prueba)" : o.numero, estado: o.estado === "aplicada" ? "Falta devolver el remanente" : ESTADO_PEND[o.estado] || o.estado,
+                     lotes: o.lotes.map((x) => x.loteId), labor: o.labor || "" }));
+    lista.forEach((o) => o.lotes.forEach((id) => { (PEND[id] = PEND[id] || []).push(o.numero); }));
+    return lista;
+  }
+  const etiqueta = (l) => l.nombre + (PEND[l.id] ? " · " + PEND[l.id].join(" · ") : "");
+  function renderPendientesMapa() {
+    const lista = calcularPendientes();
+    LOTES.forEach((l) => { if (capaDe[l.id]) { capaDe[l.id].setStyle(estilo(l)); capaDe[l.id].setTooltipContent(etiqueta(l)); } });
+    const cont = $("pend-mapa");
+    if (!cont) return;
+    cont.innerHTML = lista.length
+      ? '<div class="pm-t">Órdenes pendientes · ' + lista.length + "</div>" + lista.map((o) => `<button class="pm" data-pm="${esc(o.id)}">
+          <b>${esc(o.numero)}</b> · ${esc(o.estado)}<br><span>${esc(o.lotes.map((id) => (LOTES.find((x) => x.id === id) || {}).nombre || "?").join(", "))}${o.labor ? " · " + esc(o.labor) : ""}</span></button>`).join("")
+      : "";
+    cont.querySelectorAll("[data-pm]").forEach((b) => b.addEventListener("click", () => {
+      const o = lista.find((x) => x.id === b.dataset.pm);
+      const ls = LOTES.filter((l) => o.lotes.indexOf(l.id) !== -1);
+      if (!ls.length) return;
+      ls.forEach((l) => camposVisibles.add(l.campo));
+      aplicarVisibilidad(); renderChips(); renderLista();
+      const pts = ls.filter((l) => l.anillos && l.anillos.length).flatMap((l) => l.anillos[0].map((p) => [p[1], p[0]]));
+      if (pts.length) mapa.fitBounds(L.latLngBounds(pts), { padding: [60, 60] });
+    }));
+  }
+
+  function estilo(l) {
+    const sel = seleccion.has(l.id);
+    // Lote con una orden pendiente: borde naranja grueso, para ubicarlo en el campo
+    const pend = !sel && PEND[l.id];
+    return {
+      color: sel ? "#22c55e" : pend ? "#f97316" : colorLote(l),
+      weight: sel ? 4 : pend ? 5 : 2.5,
+      opacity: 1,
+      fillColor: sel ? "#22c55e" : colorLote(l),
+      // Seleccionado siempre se rellena, aunque el modo sea "sólo contorno":
+      // es la única señal de que está elegido si no se ve la lista
+      fillOpacity: sel ? Math.max(0.3, RELLENO[modoRelleno]) : RELLENO[modoRelleno],
+    };
+  }
+
+  function estiloRealce(l) {
+    return {
+      color: "#0b1220",
+      weight: seleccion.has(l.id) ? 8 : 6,
+      opacity: 0.6,
+      fill: false,
+      interactive: false,
+    };
+  }
+
+  function repintarTodos() {
+    LOTES.forEach((l) => {
+      if (capaDe[l.id]) capaDe[l.id].setStyle(estilo(l));
+      if (realceDe[l.id]) realceDe[l.id].setStyle(estiloRealce(l));
+    });
+  }
+
+  LOTES.forEach((l) => {
+    if (!l.anillos || !l.anillos.length) return;     // sin dibujo (banquinas): sólo en la lista
+    // Leaflet quiere [lat, lon]; el shapefile guarda [lon, lat]
+    const anillos = l.anillos.map((a) => a.map((p) => [p[1], p[0]]));
+
+    // Realce: una línea negra más ancha por debajo. Es lo que despega el
+    // contorno de la imagen, sirva el fondo claro u oscuro. Se hace con
+    // geometría y no con un filtro CSS, que Safari no dibuja bien sobre el mapa.
+    const realce = L.polygon(anillos, estiloRealce(l));
+    realce.addTo(mapa);
+    realceDe[l.id] = realce;
+
+    const poly = L.polygon(anillos, estilo(l));
+    poly.addTo(mapa);
+    poly.on("click", () => { alternar(l.id); mostrarFicha(l); });
+    poly.bindTooltip(etiqueta(l), { permanent: true, direction: "center", className: "etiq-lote" });
+    capaDe[l.id] = poly;
+  });
+
+  if (LOTES.length) {
+    aplicarVisibilidad();
+  } else {
+    mapa.setView([-24.7, -64.2], 8);
+  }
+
+  // ── Selección ───────────────────────────────────────────────────────────
+  function alternar(id) {
+    if (seleccion.has(id)) seleccion.delete(id);
+    else {
+      // Una orden es de una sola zona: tocar un lote de la otra zona empieza
+      // una selección nueva (y avisa), en vez de dejar «Recetar» trabado
+      const l = LOTES.find((x) => x.id === id);
+      const z = l ? zonaDeLoteMapa(l) : "";
+      const otras = Array.from(seleccion).filter((s) => { const o = LOTES.find((x) => x.id === s); const zo = o ? zonaDeLoteMapa(o) : ""; return z && zo && zo !== z; });
+      if (otras.length) {
+        otras.forEach((s) => { seleccion.delete(s); repintar(s); });
+        aviso("Una orden es de una sola zona: se sacaron " + otras.length + " lote(s) de la otra zona", 4000);
+      }
+      seleccion.add(id);
+    }
+    repintar(id);
+    renderLista();
+    renderResumen();
+  }
+
+  function repintar(id) {
+    const l = LOTES.find((x) => x.id === id);
+    if (!l) return;
+    if (capaDe[id]) capaDe[id].setStyle(estilo(l));
+    if (realceDe[id]) realceDe[id].setStyle(estiloRealce(l));
+    // El lote elegido va adelante, para que su contorno no quede tapado
+    if (seleccion.has(id) && capaDe[id] && capaDe[id].bringToFront) capaDe[id].bringToFront();
+  }
+
+  function renderResumen() {
+    const sel = LOTES.filter((l) => seleccion.has(l.id));
+    const ha = sel.reduce((a, l) => a + l.ha, 0);
+    $("sel-n").textContent = sel.length;
+    // Qué lotes están elegidos, aunque sean de un campo que no está a la vista
+    const nombres = sel.map((l) => l.nombre);
+    $("sel-t").textContent = (sel.length === 1 ? "lote: " : sel.length ? "lotes: " : "lotes seleccionados") +
+      (nombres.length > 6 ? nombres.slice(0, 6).join(", ") + "…" : nombres.join(", "));
+    $("sel-ha").textContent = fmt(ha);
+    const b = $("btn-recetar");
+    const porQue = motivoNoRecetar(sel);
+    b.disabled = !sel.length || !!porQue;
+    b.title = porQue;
+    b.style.opacity = sel.length && porQue ? ".55" : "";
+    b.textContent = !sel.length ? "Recetar"
+      : porQue && window.IAgUsuario.puede("emitirOT") ? porQue
+      : "Recetar " + sel.length + " lote" + (sel.length > 1 ? "s" : "") + " · " + fmt(ha) + " ha";
+  }
+
+  const zonaDeLoteMapa = (l) => { const c = (window.CAMPOS_TL || {})[l.campo] || (APLIC_META.campos || {})[l.campo]; return c ? c.zona : ""; };
+  const NOMBRE_ZONA = { TL: "Tierra Lejana" };
+
+  /**
+   * Por qué no se puede recetar esta selección ("" = se puede). Una orden es
+   * de una sola zona (en Tierra Lejana hay una sola) y la emiten la gerencia
+   * y el encargado.
+   */
+  function motivoNoRecetar(sel) {
+    if (!window.IAgUsuario.puede("emitirOT")) return "Las órdenes las emiten el gerente y los encargados";
+    const zonas = new Set(sel.map(zonaDeLoteMapa).filter(Boolean));
+    if (zonas.size > 1) return "No se puede: hay lotes de zonas distintas";
+    const u = window.IAgUsuario.actual();
+    const z = Array.from(zonas)[0];
+    if (u && u.zona && z && z !== u.zona) return "No se puede: " + u.nombre + " receta sólo en " + (NOMBRE_ZONA[u.zona] || u.zona);
+    return "";
+  }
+
+  // ── Panel ───────────────────────────────────────────────────────────────
+  function renderChips() {
+    $("chips-campos").innerHTML = campos.map((c) => {
+      const on = camposVisibles.has(c);
+      return `<button class="chip ${on ? "on" : ""}" data-campo="${esc(c)}"
+        style="${on ? "background:" + colorDe[c] + ";border-color:" + colorDe[c] : ""}">${esc(c)}</button>`;
+    }).join("");
+    $("chips-campos").querySelectorAll("[data-campo]").forEach((b) => b.addEventListener("click", () => {
+      const c = b.dataset.campo;
+      if (camposVisibles.has(c)) camposVisibles.delete(c); else camposVisibles.add(c);
+      aplicarVisibilidad();
+      renderChips();
+      renderLista();
+    }));
+  }
+
+  function visible(l) {
+    return !camposVisibles.size || camposVisibles.has(l.campo);
+  }
+
+  function aplicarVisibilidad() {
+    LOTES.forEach((l) => {
+      [realceDe[l.id], capaDe[l.id]].forEach((cap) => {
+        if (!cap) return;
+        if (visible(l)) { if (!mapa.hasLayer(cap)) cap.addTo(mapa); }
+        else if (mapa.hasLayer(cap)) mapa.removeLayer(cap);
+      });
+    });
+    const vis = LOTES.filter((l) => visible(l) && l.anillos && l.anillos.length);
+    if (vis.length) {
+      mapa.fitBounds(L.latLngBounds(vis.flatMap((l) => l.anillos.flatMap((a) => a.map((p) => [p[1], p[0]])))), { padding: [30, 30] });
+    }
+    if (!camposVisibles.size && campos.length > 1) {
+      aviso("Mostrando los " + campos.length + " campos: están a más de 300 km entre sí. Elegí uno para verlo de cerca.", 5000);
+    }
+  }
+
+  function renderLista() {
+    const q = sinAcentos($("buscar").value);
+    const filtrados = LOTES.filter((l) => visible(l) && (!q || sinAcentos(l.nombre + " " + l.campo).indexOf(q) !== -1));
+
+    if (!filtrados.length) {
+      $("lista").innerHTML = '<div class="vacio">Ningún lote coincide.</div>';
+      return;
+    }
+    let html = "", campoActual = null;
+    filtrados.forEach((l) => {
+      if (l.campo !== campoActual) {
+        campoActual = l.campo;
+        const delCampo = filtrados.filter((x) => x.campo === campoActual);
+        html += `<div class="campo-h"><span>${esc(campoActual || "Sin campo")}</span>
+          <span>${delCampo.length} · ${fmt(delCampo.reduce((a, x) => a + x.ha, 0), 0)} ha</span></div>`;
+      }
+      const on = seleccion.has(l.id);
+      html += `<div class="lote-fila ${on ? "on" : ""}" data-lote="${l.id}">
+        <input type="checkbox" ${on ? "checked" : ""} data-chk="${l.id}" />
+        <span class="pt" style="background:${colorLote(l)}"></span>
+        <span class="nm">${esc(l.nombre)}${cultivoDe(l.id) ? ` <span style="font-weight:600;font-size:11px;color:#94a3b8">${esc(cultivoDe(l.id))}</span>` : ""}</span>
+        <span class="ha">${l.sinMapa ? "sin mapa" : fmt(l.ha) + " ha"}</span>
+      </div>`;
+    });
+    $("lista").innerHTML = html;
+
+    $("lista").querySelectorAll("[data-lote]").forEach((f) => f.addEventListener("click", (e) => {
+      const l = LOTES.find((x) => x.id === f.dataset.lote);
+      if (e.target.dataset.chk === undefined) {
+        if (capaDe[l.id]) mapa.fitBounds(capaDe[l.id].getBounds(), { padding: [60, 60] });
+        mostrarFicha(l);
+      }
+      alternar(l.id);
+    }));
+  }
+
+  // ── Ficha ───────────────────────────────────────────────────────────────
+  let fichaLote = null, fichaTipo = "";
+
+  function mostrarFicha(l) {
+    fichaLote = l;
+    const ap = aplicacionesDe(l.id);
+    $("ficha-nombre").textContent = l.nombre;
+    $("ficha-campo").textContent = l.campo + (cultivoDe(l.id) ? " · " + cultivoDe(l.id) : "");
+    $("ficha-ha").textContent = l.sinMapa ? (l.detalle || "") + " · sin mapa, superficie a definir en cada orden" : fmt(l.ha) + " ha";
+    const plan = cultivoPlan(l.id);
+    $("ficha-cultivo").textContent = plan ? plan + " (plan 26-27)" : cultivoDe(l.id) || "—";
+    $("ficha-ult").textContent = ap.length ? fechaCorta([ap[0].fecha]) : "—";
+
+    // Filtro por tipo, con los tipos que este lote realmente tiene
+    const tipos = Array.from(new Set(ap.map((x) => x.tipo).filter((t) => t && t !== "0")));
+    tipos.sort();
+    if (tipos.indexOf(fichaTipo) === -1) fichaTipo = "";
+    $("ficha-filtros").innerHTML = ap.length
+      ? `<button class="${fichaTipo ? "" : "on"}" data-tipo="">Todo (${ap.length})</button>` +
+        tipos.map((t) => `<button class="${fichaTipo === t ? "on" : ""}" data-tipo="${esc(t)}">${esc(t.toLowerCase())}</button>`).join("")
+      : "";
+    $("ficha-filtros").querySelectorAll("[data-tipo]").forEach((b) => b.addEventListener("click", () => {
+      fichaTipo = b.dataset.tipo; mostrarFicha(l);
+    }));
+
+    pintarAplicaciones(ap);
+    $("ficha").classList.add("abierta");
+  }
+
+  function pintarAplicaciones(ap) {
+    const vis = fichaTipo ? ap.filter((x) => x.tipo === fichaTipo) : ap;
+    if (!vis.length) {
+      $("ficha-lista").innerHTML = '<div style="padding:16px 0;color:#94a3b8;font-size:12.5px;text-align:center">' +
+        (fichaTipo ? "Sin aplicaciones para ese filtro." : APLIC_META.aplicaciones ? "Sin aplicaciones registradas." : "Sin aplicaciones en la app (el historial anterior todavía no se cargó).") + "</div>";
+      return;
+    }
+    const dias = agruparPorDia(vis);
+    const MAX = 30;
+    $("ficha-lista").innerHTML = dias.slice(0, MAX).map((g) => {
+      const ha = g.partes.length > 1
+        ? g.partes.map((s) => fmt(s, 0)).join(" + ") + " = " + fmt(g.ha, 0) + " ha"
+        : g.ha ? fmt(g.ha, 1) + " ha" : "";
+      return `<div class="dia">
+        <div class="dia-cab"><span class="fe">${esc(fechaCorta(g.fechas))}</span><span class="ha">${ha}</span></div>
+        ${g.fechas.length > 1 ? '<div class="dia-junta">Misma aplicación hecha en dos días: se suma la superficie</div>' : ""}
+        ${g.filas.map((x) => `<div class="ap">
+          <div class="l1"><span class="pr">${esc(x.producto)}</span></div>
+          <div class="l2">
+            ${x.tipo && x.tipo !== "0" ? `<span class="tp">${esc(x.tipo.toLowerCase())}</span>` : ""}
+            ${x.dosis ? fmt(x.dosis, 2) + " " + esc(x.unidad) + "/ha" : ""}
+            ${x.total ? " · " + fmt(x.total, 1) + " " + esc(x.unidad) : ""}
+            ${x.real ? "" : ' · <span style="color:#b45309;font-weight:700">presupuesto</span>'}
+            ${x.ot ? ' · <span style="color:#15803d;font-weight:700">' + esc(x.ot) + "</span>" : ""}
+          </div>
+        </div>`).join("")}
+      </div>`;
+    }).join("") +
+      (dias.length > MAX ? `<div style="padding:8px 0;color:#94a3b8;font-size:11.5px;text-align:center">…y ${dias.length - MAX} fechas más</div>` : "");
+  }
+
+  /** "2026-05-15" → "15/05/2026"; dos fechas → "14 y 15/05/2026". */
+  function fechaCorta(fechas) {
+    const d = (f) => f ? f.slice(8, 10) + "/" + f.slice(5, 7) + "/" + f.slice(0, 4) : "Sin fecha";
+    if (fechas.length === 1) return d(fechas[0]);
+    const [a, b] = fechas;
+    return a.slice(0, 7) === b.slice(0, 7) ? a.slice(8, 10) + " y " + d(b) : d(a) + " y " + d(b);
+  }
+
+  /**
+   * Agrupa las aplicaciones por fecha, de la más nueva a la más vieja.
+   *
+   * Cuando un lote no se termina en el día, el Excel lo registra como dos
+   * aplicaciones: 7 ha el 14/5 y 70 ha el 15/5, con los mismos productos y la
+   * misma dosis. Se juntan en una sola si son días consecutivos y todos los
+   * productos de uno de los dos días están en el otro con la misma dosis. Lo
+   * que no coincide (la trilla del día siguiente) queda en su propia fecha.
+   */
+  function agruparPorDia(ap) {
+    const porFecha = new Map();
+    ap.forEach((x) => {
+      if (!porFecha.has(x.fecha)) porFecha.set(x.fecha, []);
+      porFecha.get(x.fecha).push(x);
+    });
+    const fechas = Array.from(porFecha.keys()).sort();   // vieja → nueva
+    const supDe = (filas) => filas.reduce((m, x) => Math.max(m, x.sup || 0), 0);
+    const grupos = fechas.map((f) => ({ fechas: [f], filas: porFecha.get(f) }));
+
+    const DIA = 864e5;
+    const juntos = [];
+    for (let i = 0; i < grupos.length - 1; i++) {
+      const A = grupos[i], B = grupos[i + 1];
+      const fa = A.fechas[0], fb = B.fechas[0];
+      if (!fa || !fb || Date.parse(fb) - Date.parse(fa) !== DIA) continue;
+      const ra = A.filas.filter((x) => x.real), rb = B.filas.filter((x) => x.real);
+      const pares = [];
+      ra.forEach((a) => {
+        const b = rb.find((y) => y.producto === a.producto && y.unidad === a.unidad &&
+                                 Math.abs((y.dosis || 0) - (a.dosis || 0)) < 1e-6);
+        if (b) pares.push([a, b]);
+      });
+      if (!pares.length || (pares.length !== ra.length && pares.length !== rb.length)) continue;
+
+      const usadas = new Set(pares.flat());
+      const supA = supDe(pares.map((p) => p[0])), supB = supDe(pares.map((p) => p[1]));
+      juntos.push({
+        fechas: [fa, fb],
+        partes: [supA, supB],
+        ha: supA + supB,
+        filas: pares.map(([a, b]) => Object.assign({}, b, {
+          sup: (a.sup || 0) + (b.sup || 0), total: (a.total || 0) + (b.total || 0),
+        })),
+      });
+      A.filas = A.filas.filter((x) => !usadas.has(x));
+      B.filas = B.filas.filter((x) => !usadas.has(x));
+      i++;   // B ya quedó usado: no se encadena con el día siguiente
+    }
+
+    return grupos.filter((g) => g.filas.length)
+      .map((g) => ({ fechas: g.fechas, partes: [supDe(g.filas)], ha: supDe(g.filas), filas: g.filas }))
+      .concat(juntos)
+      .sort((a, b) => (b.fechas[b.fechas.length - 1] || "").localeCompare(a.fechas[a.fechas.length - 1] || ""));
+  }
+
+  $("ficha-x").addEventListener("click", () => { $("ficha").classList.remove("abierta"); });
+
+  // ── Puente con stock.html ───────────────────────────────────────────────
+
+  /**
+   * Los lotes del mapa viven acá; el stock tiene los suyos. Antes de recetar
+   * hay que asegurarse de que los seleccionados existan del otro lado, o la
+   * orden no sabría a qué superficie aplicarle la dosis.
+   */
+  function recetar() {
+    const sel = LOTES.filter((l) => seleccion.has(l.id));
+    if (!sel.length) return;
+    const porQue = motivoNoRecetar(sel);
+    if (porQue) return aviso(porQue);
+
+    // La selección va por su cuenta: recetar no depende de que el stock ya
+    // exista en este equipo. La orden la toma al abrirse.
+    const receta = { lotes: sel.map((l) => ({ nombre: l.nombre, campo: l.campo, ha: l.ha })),
+                     origen: "recorrer", fecha: new Date().toISOString().slice(0, 10) };
+    try { localStorage.setItem("iagtl_receta_pendiente", JSON.stringify(receta)); }
+    catch (e) { return aviso("No se pudo guardar la selección"); }
+    window.location.href = "stock.html?v=25";
+  }
+
+  // ── Ubicación ───────────────────────────────────────────────────────────
+  let marcaYo = null;
+  $("btn-ubic").addEventListener("click", () => {
+    if (!navigator.geolocation) return aviso("Este dispositivo no da ubicación");
+    $("btn-ubic").textContent = "buscando…";
+    navigator.geolocation.getCurrentPosition((pos) => {
+      $("btn-ubic").textContent = "📍 Mi ubicación";
+      const ll = [pos.coords.latitude, pos.coords.longitude];
+      if (marcaYo) mapa.removeLayer(marcaYo);
+      marcaYo = L.circleMarker(ll, { radius: 8, color: "#fff", weight: 3, fillColor: "#1d4ed8", fillOpacity: 1 }).addTo(mapa);
+      mapa.setView(ll, 15);
+      // ¿Estoy parado dentro de algún lote?
+      const dentro = LOTES.find((l) => l.anillos && l.anillos.length && enPoligono(pos.coords.longitude, pos.coords.latitude, l.anillos[0]));
+      if (dentro) { mostrarFicha(dentro); aviso("Estás en el lote " + dentro.nombre); }
+    }, () => {
+      $("btn-ubic").textContent = "📍 Mi ubicación";
+      aviso("No se pudo obtener la ubicación");
+    }, { enableHighAccuracy: true, timeout: 12000 });
+  });
+
+  function enPoligono(x, y, anillo) {
+    let dentro = false;
+    for (let i = 0, j = anillo.length - 1; i < anillo.length; j = i++) {
+      const xi = anillo[i][0], yi = anillo[i][1], xj = anillo[j][0], yj = anillo[j][1];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) dentro = !dentro;
+    }
+    return dentro;
+  }
+
+  // ── Eventos ─────────────────────────────────────────────────────────────
+  $("buscar").addEventListener("input", renderLista);
+  $("btn-recetar").addEventListener("click", recetar);
+  $("btn-limpiar").addEventListener("click", () => {
+    const ids = Array.from(seleccion); seleccion.clear();
+    ids.forEach(repintar); renderLista(); renderResumen();
+    $("ficha").classList.remove("abierta");
+  });
+
+  // ── Arranque ────────────────────────────────────────────────────────────
+  $("barra-usuario").innerHTML = window.IAgUsuario.barra("index.html?v=25");
+
+  // Recetar es tarea del gerente y los encargados: lo decide motivoNoRecetar()
+  $("info-campos").textContent = LOTES.length
+    ? LOTES.length + " lotes · " + fmt(META.ha || LOTES.reduce((a, l) => a + l.ha, 0), 0) + " ha · " + campos.length + " campos"
+      + (APLIC_META.aplicaciones ? " · " + APLIC_META.aplicaciones.toLocaleString("es-AR") + " aplicaciones" : "")
+    : "";
+  renderChips();
+  renderLista();
+  renderResumen();
+  renderPendientesMapa();
+  // Llegó una orden nueva (o cambió una) desde el Drive: se marca en el mapa
+  // Llegó algo de la planilla (planificación, órdenes): se repinta el mapa, la
+  // lista y la ficha abierta, sin tener que recargar la página
+  if (window.IAgNube) window.IAgNube.alCambiar("iagtl_stock_v2", () => {
+    renderPendientesMapa();
+    LOTES.forEach((l) => repintar(l.id));
+    renderLista();
+    if (fichaLote && $("ficha").classList.contains("abierta")) mostrarFicha(fichaLote);
+  });
+})();
+</script>
+</body>
+</html>

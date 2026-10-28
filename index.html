@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>I.Ag · Segunda etapa</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f0f4f8; color: #1e293b; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; }
+  .logo { font-size: 58px; font-weight: 800; color: #c88a1e; letter-spacing: .09em; }
+  .sub { font-size: 15px; color: #64748b; margin-top: 4px; }
+  .pregunta { font-size: 19px; font-weight: 700; color: #0f172a; margin: 34px 0 20px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 18px; width: 100%; max-width: 940px; }
+  @media (max-width: 780px) { .grid { grid-template-columns: 1fr; } }
+  .mod .cuenta { position: absolute; top: 14px; right: 14px; font-size: 12px; font-weight: 800; color: #fff;
+    border-radius: 20px; padding: 2px 9px; }
+
+  .mod { background: #fff; border: 2px solid; border-radius: 15px; padding: 24px 22px; text-decoration: none;
+    display: flex; flex-direction: column; gap: 10px; transition: transform .12s, box-shadow .12s; position: relative; }
+  .mod:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(15,23,42,.10); }
+  .mod .ico { font-size: 30px; }
+  .mod h2 { font-size: 21px; font-weight: 800; }
+  .mod p { font-size: 13.5px; color: #475569; line-height: 1.55; flex: 1; }
+  .mod .ir { font-size: 13px; font-weight: 700; margin-top: 4px; }
+  .mod.no { opacity: .55; pointer-events: none; }
+  .tag { position: absolute; top: 14px; right: 14px; font-size: 10px; font-weight: 800; padding: 3px 9px;
+    border-radius: 20px; text-transform: uppercase; letter-spacing: .04em; }
+
+  .pie { margin-top: 38px; font-size: 12px; color: #94a3b8; text-align: center; line-height: 1.7; }
+  .pie code { background: #e2e8f0; padding: 1px 6px; border-radius: 4px; font-size: 11.5px; }
+  .quienes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; width: 100%; max-width: 940px; }
+  @media (max-width: 780px) { .quienes { grid-template-columns: repeat(2, 1fr); } }
+  .quien-b { background: #fff; border: 2px solid #e2e8f0; border-radius: 14px; padding: 20px 16px;
+    cursor: pointer; font-family: inherit; text-align: center; transition: transform .12s, border-color .12s; }
+  .quien-b:hover { transform: translateY(-3px); border-color: #94a3b8; }
+  .quien-b .ini { width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 10px; display: flex;
+    align-items: center; justify-content: center; font-size: 19px; font-weight: 800; color: #fff; }
+  .quien-b .nm { font-size: 17px; font-weight: 800; color: #0f172a; }
+  .quien-b .rl { font-size: 12px; font-weight: 700; margin-top: 2px; }
+  .quien-b .hc { font-size: 11.5px; color: #94a3b8; margin-top: 7px; line-height: 1.45; }
+
+  .barra-usuario { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #e2e8f0;
+    border-radius: 30px; padding: 6px 8px 6px 16px; margin-bottom: 26px; font-size: 13px; }
+  .barra-usuario b { color: #0f172a; }
+  .barra-usuario .rl { color: #64748b; }
+  .barra-usuario button { font-family: inherit; font-size: 12px; font-weight: 700; border: none;
+    background: #f1f5f9; color: #475569; border-radius: 20px; padding: 5px 12px; cursor: pointer; }
+  .barra-usuario button:hover { background: #e2e8f0; }
+
+  .mod.bloq { opacity: .5; }
+  .mod.bloq .ir { color: #94a3b8 !important; }
+
+  #estado { margin-top: 22px; font-size: 12.5px; color: #64748b; background: #fff; border: 1px solid #e2e8f0;
+    border-radius: 10px; padding: 10px 16px; }
+  #estado b { color: #0f172a; }
+</style>
+</head>
+<body>
+  <div class="logo">I.Ag</div>
+  <div class="sub">Segunda etapa · funciona sin conexión</div>
+
+  <div id="barra-usuario"></div>
+  <div class="pregunta" id="pregunta">¿Quién sos?</div>
+
+  <div class="quienes" id="quienes"></div>
+
+  <div class="grid" id="modulos" style="display:none"></div>
+
+  <div id="estado"></div>
+
+  <div class="pie">
+    <a href="flujo.html?v=25" style="color:#1d4ed8;font-weight:700;text-decoration:none">¿Cómo funciona? Ver el circuito paso a paso →</a><br>
+    <a href="conectar.html?v=25" style="color:#1d4ed8;font-weight:700;text-decoration:none">☁ Conectar con el Drive</a><br><br>
+    Los datos se guardan en este equipo y, si está conectado, se sincronizan con la planilla del Drive.
+  </div>
+
+<script src="usuario.js?v=25"></script>
+<script src="lotes-tl.js?v=25" onerror="window.LOTES_FALTA=true"></script>
+<script src="aplicaciones-tl.js?v=25" onerror="window.APLIC_FALTA=true"></script>
+<script src="campos-tl.js?v=25"></script>
+<script src="hojas.js?v=25"></script>
+<script src="nube.js?v=25"></script>
+<script>
+(function () {
+  "use strict";
+  const U = window.IAgUsuario;
+  const $ = (id) => document.getElementById(id);
+  const COLOR = { gerente: "#15803d", encargado: "#0e7490", equipo: "#1d4ed8", oficina: "#b45309" };
+
+  function pintar() {
+    const u = U.actual();
+
+    if (!u) {
+      // Sin identificar: primero se elige quién sos
+      $("pregunta").textContent = "¿Quién sos?";
+      $("quienes").style.display = "grid";
+      $("modulos").style.display = "none";
+      $("barra-usuario").innerHTML = "";
+      $("barra-usuario").className = "";
+      $("estado").style.display = "none";
+      $("quienes").innerHTML = U.USUARIOS.map((x) => `
+        <button class="quien-b" data-u="${x.id}" style="border-color:${COLOR[x.rol]}22">
+          <span class="ini" style="background:${COLOR[x.rol]}">${x.nombre[0]}</span>
+          <span class="nm">${x.nombre}</span>
+          <div class="rl" style="color:${COLOR[x.rol]}">${x.titulo}</div>
+          <div class="hc">${x.hace}</div>
+        </button>`).join("");
+      $("quienes").querySelectorAll("[data-u]").forEach((b) =>
+        b.addEventListener("click", () => { U.entrar(b.dataset.u); pintar(); }));
+      return;
+    }
+
+    $("pregunta").textContent = "¿Qué querés hacer?";
+    $("quienes").style.display = "none";
+    $("modulos").style.display = "grid";
+    $("barra-usuario").className = "barra-usuario";
+    $("barra-usuario").innerHTML =
+      `<span class="ini" style="width:26px;height:26px;border-radius:50%;display:inline-flex;
+         align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;
+         background:${COLOR[u.rol]}">${u.nombre[0]}</span>
+       <span><b>${u.nombre}</b> <span class="rl">· ${u.titulo}</span></span>
+       <button id="salir">Cambiar</button>`;
+    $("salir").addEventListener("click", () => { U.salir(); pintar(); });
+
+    // Cada perfil ve sólo lo suyo, en el orden en que lo usa
+    const pend = pendientes(u);
+    // Quien emite órdenes también receta desde el mapa
+    const menu = (MENU[u.rol] || []).slice();
+    if (U.puede("emitirOT") && menu.indexOf("recorrer") === -1 && menu.indexOf("mapa") === -1) menu.unshift("recorrer");
+    $("modulos").innerHTML = menu.map((k) => {
+      const m = MODULOS[k];
+      const desc = typeof m.desc === "function" ? m.desc(u) : m.desc;
+      return `<a class="mod" id="mod-${k}" href="${m.href}" style="border-color:${m.color}">
+        ${k === "pendientes" && pend ? `<span class="cuenta" style="background:${m.color}">${pend}</span>` : ""}
+        <span class="ico">${m.ico}</span>
+        <h2 style="color:${m.color}">${m.titulo}</h2>
+        <p>${desc}</p>
+        <span class="ir" style="color:${m.color}">Ir →</span>
+      </a>`;
+    }).join("");
+    resumen();
+  }
+
+  const MODULOS = {
+    recorrer: { href: "recorrer.html?v=25", ico: "🗺️", color: "#15803d", titulo: "Recorrer y recetar",
+      desc: "El mapa de los campos. Mirá qué se le aplicó a cada lote, elegí uno o varios y armá la orden de trabajo." },
+    mapa: { href: "recorrer.html?v=25", ico: "🗺️", color: "#15803d", titulo: "Mapa",
+      desc: "Los lotes con órdenes pendientes marcados en el mapa, para ubicarse en el campo." },
+    pendientes: { href: "stock.html?v=25#pend", ico: "📋", color: "#1d4ed8", titulo: "Órdenes pendientes",
+      desc: (u) => u.rol === "equipo"
+        ? "Las órdenes para aplicar: retirar el producto y reportar la aplicación."
+        : u.rol === "encargado"
+        ? "Confirmar las aplicaciones reportadas y la devolución del remanente."
+        : "Las órdenes emitidas que todavía no se cerraron, y en qué paso está cada una." },
+    stock: { href: "stock.html?v=25#stock", ico: "📦", color: "#b45309", titulo: "Stock",
+      desc: (u) => u.rol === "gerente"
+        ? "Primero lo que está en tránsito; después las existencias por depósito y los envases abiertos."
+        : "Existencias por depósito, lo que está en tránsito y los envases abiertos." },
+    compras: { href: "stock.html?v=25#stock", ico: "📦", color: "#b45309", titulo: "Stock y compras",
+      desc: "Existencias por depósito, compras repartidas entre depósitos, lo que está por llegar y los movimientos." },
+  };
+  const MENU = {
+    gerente: ["recorrer", "pendientes", "stock"],
+    encargado: ["recorrer", "pendientes", "stock"],
+    equipo: ["pendientes", "mapa"],
+    oficina: ["compras", "stock"],
+  };
+
+  /** Órdenes que le esperan a este usuario (las de su zona, si tiene). */
+  function pendientes(u) {
+    try {
+      const S = JSON.parse(localStorage.getItem("iagtl_stock_v2") || "null");
+      if (!S) return 0;
+      const zonaDe = (o) => {
+        const zs = new Set();
+        o.lotes.forEach((x) => {
+          const l = (S.lotes || []).find((y) => y.id === x.loteId);
+          const c = l && window.APLIC_META && window.APLIC_META.campos[l.campo];
+          if (c && c.zona) zs.add(c.zona);
+        });
+        return zs.size === 1 ? Array.from(zs)[0] : "";
+      };
+      return (S.ordenes || []).filter((o) =>
+        (o.estado !== "aplicada" || o.retorno === "pendiente") &&
+        (!u.zona || !zonaDe(o) || zonaDe(o) === u.zona)).length;
+    } catch (e) { return 0; }
+  }
+
+  function resumen() {
+    const partes = [];
+    const L = window.LOTES;
+    if (Array.isArray(L) && L.length) {
+      const ha = L.reduce((a, l) => a + (l.ha || 0), 0);
+      partes.push("<b>" + L.length + "</b> lotes · <b>" +
+        ha.toLocaleString("es-AR", { maximumFractionDigits: 0 }) + "</b> ha");
+    }
+    if (window.APLIC_META && window.APLIC_META.aplicaciones) {
+      partes.push("<b>" + window.APLIC_META.aplicaciones.toLocaleString("es-AR") + "</b> aplicaciones");
+    }
+    try {
+      const S = JSON.parse(localStorage.getItem("iagtl_stock_v2") || "null");
+      if (S) {
+        partes.push("<b>" + (S.depositos || []).length + "</b> depósitos");
+
+      }
+    } catch (e) { /* datos ilegibles: mostramos el resto igual */ }
+    $("estado").innerHTML = partes.join(" &nbsp;·&nbsp; ");
+    $("estado").style.display = partes.length ? "" : "none";
+  }
+
+  pintar();
+  // Llegaron cambios del Drive: se recalculan los pendientes
+  if (window.IAgNube) window.IAgNube.alCambiar("iagtl_stock_v2", pintar);
+})();
+</script>
+</body>
+</html>

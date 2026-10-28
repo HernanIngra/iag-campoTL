@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Conectar con el Drive · I.Ag</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f0f4f8; color: #1e293b; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 15px; }
+  header { background: #1e293b; color: #fff; padding: 14px 24px; display: flex; align-items: baseline; gap: 14px; }
+  header .logo { font-size: 18px; font-weight: 800; color: #e2b04a; letter-spacing: .08em; }
+  header h1 { font-size: 17px; font-weight: 600; }
+  header .spacer { flex: 1; }
+  header a { background: #334155; color: #e2e8f0; border-radius: 7px; padding: 5px 11px; font-size: 12px; font-weight: 700; text-decoration: none; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 22px 16px 80px; }
+  .block { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; }
+  h2 { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+  p, li { color: #475569; line-height: 1.6; font-size: 14.5px; }
+  ol { padding-left: 20px; margin-top: 6px; }
+  label { display: block; font-size: 13px; font-weight: 700; color: #475569; margin: 12px 0 4px; }
+  input { width: 100%; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 9px 11px; font-size: 15px; font-family: inherit; }
+  .fila { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  button { font-family: inherit; font-size: 14px; font-weight: 700; border-radius: 8px; padding: 9px 15px; cursor: pointer; border: 1.5px solid transparent; }
+  .primario { background: #1d4ed8; color: #fff; }
+  .neutro { background: #fff; color: #475569; border-color: #cbd5e1; }
+  .peligro { background: #fff; color: #b91c1c; border-color: #fecaca; }
+  .estado { margin-top: 12px; font-size: 14px; padding: 9px 12px; border-radius: 8px; background: #f1f5f9; color: #334155; }
+  .ok { background: #f0fdf4; color: #15803d; }
+  .mal { background: #fef2f2; color: #b91c1c; }
+  code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+  .enlace { word-break: break-all; font-size: 12.5px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 8px 10px; margin-top: 8px; color: #334155; }
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">I.Ag</span>
+  <h1>Conectar con el Drive</h1>
+  <span class="spacer"></span>
+  <a href="index.html?v=25">Inicio</a>
+</header>
+
+<div class="wrap">
+  <div class="block">
+    <h2>1 · Conexión</h2>
+    <p>La dirección del Apps Script de la planilla y la clave. Se cargan una vez por equipo — o se toca el enlace que manda quien ya está conectado.</p>
+    <label for="url">Dirección del Apps Script</label>
+    <input id="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" />
+    <label for="clave">Clave</label>
+    <input id="clave" placeholder="la que pusiste en Code.gs" autocomplete="off" />
+    <div class="fila">
+      <button class="primario" id="guardar">Guardar y probar</button>
+      <button class="peligro" id="desconectar">Desconectar este equipo</button>
+    </div>
+    <div class="estado" id="estado-con">—</div>
+  </div>
+
+  <div class="block">
+    <h2>2 · Datos de la empresa</h2>
+    <p>Historial de labores de Tierra Lejana. No va en GitHub: viven en la planilla y cada equipo los baja una vez.</p>
+    <div class="fila">
+      <button class="primario" id="subir-archivos">Subir los datos de este equipo al Drive</button>
+      <button class="neutro" id="bajar-archivos">Bajar de nuevo del Drive</button>
+    </div>
+    <p style="font-size:13px;margin-top:8px">«Subir» se hace desde la Mac, con la app abierta con <code>servir.command</code>: es donde están los archivos. Después de regenerar un dato (por ejemplo con <code>build_labores_tl.py</code>), se vuelve a subir.</p>
+    <div class="estado" id="estado-arch">—</div>
+  </div>
+
+  <div class="block">
+    <h2>3 · Sincronización</h2>
+    <p>Lo que cada uno carga (compras, órdenes, remitos) se sube solo a los pocos segundos y cada minuto se baja lo de los demás. Sin señal, se guarda en el equipo y sube cuando vuelve.</p>
+    <div class="fila"><button class="neutro" id="sincronizar">Sincronizar ahora</button></div>
+    <div class="estado" id="estado-sync">—</div>
+  </div>
+
+  <div class="block">
+    <h2>4 · Conectar otro equipo</h2>
+    <p>Mandá este enlace por WhatsApp a los otros usuarios. Al abrirlo, su equipo queda conectado. <b>Lleva la clave adentro:</b> no lo compartas fuera de la empresa.</p>
+    <div class="enlace" id="enlace">Primero conectá este equipo.</div>
+    <div class="fila"><button class="neutro" id="copiar">Copiar enlace</button><button class="neutro" id="compartir">Compartir…</button></div>
+  </div>
+</div>
+
+<script src="usuario.js?v=25"></script>
+<script src="nube.js?v=25"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const N = window.IAgNube;
+  const poner = (id, txt, clase) => { const e = $(id); e.textContent = txt; e.className = "estado " + (clase || ""); };
+
+  function pintar() {
+    const c = N.config();
+    $("url").value = c ? c.url : "";
+    $("clave").value = c ? c.clave : "";
+    $("enlace").textContent = c ? N.enlace() : "Primero conectá este equipo.";
+    const n = N.pendientes();
+    poner("estado-sync", c ? (n ? n + " cambio(s) por subir" : "Al día con el Drive") : "Sin conectar", c && !n ? "ok" : "");
+  }
+
+  function probar() {
+    poner("estado-con", "Probando…");
+    return N.probar().then((r) => {
+      if (r.ok) poner("estado-con", "Conectado a la planilla «" + r.planilla + "»", "ok");
+      else poner("estado-con", r.error === "clave" ? "La clave no coincide con la de Code.gs" : "Error: " + r.error, "mal");
+    }).catch(() => poner("estado-con", "No responde: revisá la dirección (tiene que terminar en /exec) y que esté publicada para «Cualquier persona»", "mal"));
+  }
+
+  $("guardar").addEventListener("click", () => {
+    if (!/^https:\/\/script\.google\.com\//.test($("url").value.trim())) return poner("estado-con", "La dirección tiene que empezar con https://script.google.com/", "mal");
+    if (!$("clave").value.trim()) return poner("estado-con", "Falta la clave", "mal");
+    N.conectar($("url").value, $("clave").value);
+    pintar();
+    probar().then(() => N.sincronizar()).then(pintar);
+  });
+  $("desconectar").addEventListener("click", () => {
+    if (!confirm("Este equipo deja de sincronizar. Lo cargado queda en el equipo. ¿Seguir?")) return;
+    N.desconectar(); pintar(); poner("estado-con", "Desconectado");
+  });
+
+  $("subir-archivos").addEventListener("click", () => {
+    if (!N.config()) return poner("estado-arch", "Primero conectá este equipo", "mal");
+    poner("estado-arch", "Subiendo…");
+    // Los archivos se leen tal cual del servidor de la Mac
+    Promise.all(N.ARCHIVOS.map((a) => fetch(a.nombre + ".js", { cache: "no-store" }).then((r) => {
+      if (!r.ok) throw new Error("este equipo no tiene " + a.nombre + ".js (se sube desde la Mac)");
+      return r.text();
+    }).then((texto) => N.subirArchivo(a.nombre, texto).then((r) => {
+      if (!r.ok) throw new Error(r.error);
+      return a.nombre + ": " + Math.round(texto.length / 1024) + " KB";
+    })))).then((partes) => poner("estado-arch", "Subidos · " + partes.join(" · "), "ok"))
+      .catch((e) => poner("estado-arch", String(e.message || e), "mal"));
+  });
+  $("bajar-archivos").addEventListener("click", () => {
+    if (!N.config()) return poner("estado-arch", "Primero conectá este equipo", "mal");
+    poner("estado-arch", "Bajando…");
+    N.bajarArchivos().then(() => poner("estado-arch", "Datos de la empresa actualizados en este equipo", "ok"))
+      .catch((e) => poner("estado-arch", String(e.message || e), "mal"));
+  });
+
+  $("sincronizar").addEventListener("click", () => { poner("estado-sync", "Sincronizando…"); N.sincronizar().then(pintar); });
+  $("copiar").addEventListener("click", () => {
+    const t = N.enlace();
+    if (!t) return;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { $("copiar").textContent = "¡Copiado!"; })
+      .catch(() => { const r = document.createRange(); r.selectNodeContents($("enlace")); getSelection().removeAllRanges(); getSelection().addRange(r); });
+  });
+  $("compartir").addEventListener("click", () => {
+    const t = N.enlace();
+    if (t && navigator.share) navigator.share({ title: "I.Ag", text: "Conectate a I.Ag", url: t }).catch(() => {});
+    else $("copiar").click();
+  });
+
+  pintar();
+  if (N.config()) probar();
+})();
+</script>
+</body>
+</html>
